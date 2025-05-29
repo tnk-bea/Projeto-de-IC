@@ -1,1 +1,39 @@
+from pulp import *
 
+# Dados
+calcados = {
+    "Tênis 1":     {"preco": 500, "conforto": 10},
+    "Sandália 1":  {"preco": 80,  "conforto": 5},
+    "Sandália 2":  {"preco": 450, "conforto": 7},
+    "Tênis 2":     {"preco": 200, "conforto": 8},
+    "Bota 1":      {"preco": 150, "conforto": 5},
+    "Sapatênis 1": {"preco": 150, "conforto": 3},
+    "Tênis 3":     {"preco": 200, "conforto": 4}
+}
+
+C_meta = 8
+P_meta = 300
+wc, wp = 3, 7
+
+# Modelo
+modelo = LpProblem("Programacao_por_metas", LpMinimize)
+
+x = {k: LpVariable(f"x_{k}", cat=LpBinary) for k in calcados}
+dc_pos = LpVariable("dc_pos", lowBound=0)
+dc_neg = LpVariable("dc_neg", lowBound=0)
+dp_pos = LpVariable("dp_pos", lowBound=0)
+dp_neg = LpVariable("dp_neg", lowBound=0)
+
+modelo += wc * dc_neg + wp * dp_pos
+
+modelo += lpSum(calcados[i]["conforto"] * x[i] for i in calcados) + dc_neg - dc_pos == C_meta
+modelo += lpSum(calcados[i]["preco"] * x[i] for i in calcados) + dp_neg - dp_pos == P_meta
+modelo += lpSum(x[i] for i in calcados) >= 1
+
+modelo.solve()
+
+print("Calçados escolhidos (PPM):")
+for i in calcados:
+    if x[i].varValue > 0:
+        print(f"{i} → {x[i].varValue}")
+print(f"Z = {value(modelo.objective):.2f}")
