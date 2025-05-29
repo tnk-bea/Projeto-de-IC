@@ -1,8 +1,6 @@
 from pulp import *
 
-# ============================
 # Parâmetros e conjuntos simulados (exemplo para iniciar)
-# ============================
 
 n = 3  # número de clientes internos
 m = 2  # número de clientes externos
@@ -26,9 +24,7 @@ rho0 = 1.0
 rhostar = 2.0
 delta = 2.6
 
-# ============================
 # Modelo
-# ============================
 
 model = LpProblem("MultiObjective_PRP_with_SplitDelivery", LpMaximize)
 
@@ -38,9 +34,8 @@ y = LpVariable.dicts("y", (i for i in clientes_internos + clientes_externos), ca
 z = LpVariable.dicts("z", ((i, k) for i in clientes_internos + clientes_externos for k in veiculos), lowBound=0)
 l = LpVariable.dicts("l", ((i, j, k) for (i, j) in arestas for k in veiculos), lowBound=0)
 
-# ============================
+
 # Funções Objetivo
-# ============================
 
 # Lucro líquido (Maximizar)
 f1 = lpSum(
@@ -59,9 +54,8 @@ f2 = lpSum(
     for (i, j) in arestas for k in veiculos
 )
 
-# ============================
+
 # Restrições
-# ============================
 
 # (1) Conservação de fluxo
 for i in nos:
