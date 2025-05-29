@@ -1,0 +1,70 @@
+# Instalação da biblioteca PuLP (caso ainda não tenha sido feita)
+# Execute esta linha no Colab se necessário:
+!pip install pulp
+import matplotlib.pyplot as plt
+
+# Dados dos sapatos: nome → (conforto, preco)
+sapatos = {
+    'A': (3, 2),
+    'B': (5, 3),
+    'C': (7, 3),
+    'D': (5, 5),
+    'E': (10, 8)
+}
+
+# Função para verificar se um ponto é dominado por outro
+def eh_dominado(ponto, conjunto):
+    for outro in conjunto:
+        if (outro[1][0] >= ponto[1][0] and outro[1][1] <= ponto[1][1]) and (outro[1] != ponto[1]):
+            return True
+    return False
+
+# Identificação dos pontos não dominados (fronteira de Pareto)
+todos_pontos = list(sapatos.items())  # lista de (nome, (conforto, preco))
+pareto_otimos = [p for p in todos_pontos if not eh_dominado(p, todos_pontos)]
+
+# Ordenar para visualização
+pareto_ordenado = sorted(pareto_otimos, key=lambda x: x[1][0])  # por conforto
+
+# Mostrar os pontos Pareto-ótimos
+print("Pontos Pareto-ótimos encontrados:\n")
+for nome, (conforto, preco) in pareto_ordenado:
+    print(f"{nome}: conforto = {conforto}, preço = {preco}")
+
+# Gráfico
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.set_xlim(0, 11)
+ax.set_ylim(0, 11)
+ax.set_xlabel("Conforto")
+ax.set_ylabel("Preço")
+ax.set_title("Fronteira de Pareto – Sapatos")
+
+# Plotar todos os pontos
+for nome, (conforto, preco) in sapatos.items():
+    ax.plot(conforto, preco, 'o', color='gray')
+    ax.text(conforto + 0.2, preco, nome, fontsize=10, color='gray')
+
+# Destacar os Pareto-ótimos
+for nome, (conforto, preco) in pareto_ordenado:
+    ax.plot(conforto, preco, 'o', color='red')
+    ax.text(conforto + 0.2, preco, nome, fontsize=10, color='red')
+
+# Conectar os pontos da fronteira de Pareto
+x_pareto = [p[1][0] for p in pareto_ordenado]
+y_pareto = [p[1][1] for p in pareto_ordenado]
+ax.plot(x_pareto, y_pareto, linestyle='-', color='red', linewidth=1)
+
+# Pontos utópicos (opcional)
+utopicos = {
+    'e1': (0, 10),
+    'e2': (0, 0),
+    'e3': (10, 0),
+    'e4': (10, 10)
+}
+for nome, (x, y) in utopicos.items():
+    ax.plot(x, y, 'x', color='darkblue')
+    ax.text(x + 0.2, y, nome, fontsize=9, color='darkblue')
+
+plt.grid(True, linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.show()
