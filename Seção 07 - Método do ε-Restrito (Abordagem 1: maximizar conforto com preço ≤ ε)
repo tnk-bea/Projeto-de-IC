@@ -1,0 +1,15 @@
+modelo = LpProblem("EpsilonRestrito_MaxConforto", LpMaximize)
+
+x = {k: LpVariable(f"x_{k}", cat=LpBinary) for k in calcados}
+modelo += lpSum(calcados[i]["conforto"] * x[i] for i in calcados)
+modelo += lpSum(calcados[i]["preco"] * x[i] for i in calcados) <= 300
+modelo += lpSum(x[i] for i in calcados) >= 1
+
+modelo.solve()
+
+print("Calçados escolhidos (ε-restrito, conforto máximo com preço ≤ 300):")
+for i in calcados:
+    if x[i].varValue > 0:
+        print(f"{i} → {x[i].varValue}")
+print(f"Conforto total = {value(modelo.objective):.2f}")
+
