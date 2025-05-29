@@ -1,1 +1,55 @@
+from pulp import *
+
+# Dados dos calçados
+calcados = {
+    "Tênis 1":     {"preco": 500, "conforto": 10},
+    "Sandália 1":  {"preco": 80,  "conforto": 5},
+    "Sandália 2":  {"preco": 450, "conforto": 7},
+    "Tênis 2":     {"preco": 200, "conforto": 8},
+    "Bota 1":      {"preco": 150, "conforto": 5},
+    "Sapatênis 1": {"preco": 150, "conforto": 3},
+    "Tênis 3":     {"preco": 200, "conforto": 4}
+}
+
+# Parâmetros de normalização
+C_max = 10
+P_max = 500
+
+# Pesos da função ponderada
+wc = 0.3  # peso para conforto (a maximizar)
+wp = 0.7  # peso para custo (a minimizar)
+
+# Criar modelo
+modelo = LpProblem("Soma_Ponderada_Calcados", LpMaximize)
+
+# Variáveis de decisão
+x = {k: LpVariable(f"x_{k}", cat=LpBinary) for k in calcados}
+
+# Função objetivo normalizada: Z = wc * conforto_norm - wp * preco_norm
+modelo += lpSum(
+    wc * (calcados[n]["conforto"] / C_max) * x[n] -
+    wp * (calcados[n]["preco"] / P_max) * x[n]
+    for n in calcados
+), "Funcao_Ponderada"
+
+# Restrições
+modelo += lpSum(x[n] for n in calcados) >= 1, "Escolher_ao_menos_um"
+modelo += lpSum(calcados[n]["preco"] * x[n] for n in calcados) <= 500, "Orcamento"
+
+# Resolver
+modelo.solve()
+
+# Imprimir resultados
+print("Calçados escolhidos (Soma Ponderada):")
+for i in calcados:
+    if x[i].varValue > 0:
+        print(f"{i} → {x[i].varValue}")
+
+conforto = sum(calcados[n]["conforto"] * x[n].varValue for n in calcados)
+preco = sum(calcados[n]["preco"] * x[n].varValue for n in calcados)
+z = value(modelo.objective)
+
+print(f"Conforto total = {conforto}")
+print(f"Preço total = R$ {preco:.2f}")
+print(f"Valor da função ponderada Z = {z:.2f}")
 
