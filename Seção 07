@@ -1,0 +1,58 @@
+# Instalar PuLP se necessário
+!pip install pulp
+
+from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
+
+# Dados dos calçados
+calcados = {
+    "Tênis 1":     {"preco": 500, "conforto": 10},
+    "Sandália 1":  {"preco": 80,  "conforto": 5},
+    "Sandália 2":  {"preco": 450, "conforto": 7},
+    "Tênis 2":     {"preco": 200, "conforto": 8},
+    "Bota 1":      {"preco": 150, "conforto": 5},
+    "Sapatênis 1": {"preco": 150, "conforto": 3},
+    "Tênis 3":     {"preco": 200, "conforto": 4}
+}
+
+# Parâmetros de normalização
+C_max = 10
+P_max = 500
+
+# Pesos da função escalarizada
+w_c = 0.3  # conforto
+w_p = 0.7  # preço
+
+# Criar o modelo de otimização
+modelo = LpProblem("Escolha_de_Calcado_Soma_Ponderada", LpMaximize)
+
+# Variáveis de decisão: x_i ∈ {0,1}
+x = {nome: LpVariable(f"x_{nome}", cat=LpBinary) for nome in calcados}
+
+# Função objetivo normalizada: Z = wc * conforto_norm - wp * preco_norm
+modelo += lpSum(
+    w_c * (calcados[n]["conforto"] / C_max) * x[n] -
+    w_p * (calcados[n]["preco"] / P_max) * x[n]
+    for n in calcados
+), "Funcao_objetivo_ponderada"
+
+# Restrições
+modelo += lpSum(x[n] for n in calcados) >= 1, "Escolher_pelo_menos_um"
+modelo += lpSum(calcados[n]["preco"] * x[n] for n in calcados) <= 500, "Orcamento_maximo"
+
+# Resolver
+modelo.solve(PULP_CBC_CMD(msg=False))
+
+# Mostrar resultado
+print("Solução ótima encontrada:\n")
+for nome in calcados:
+    if x[nome].varValue == 1:
+        print(f"Calçado selecionado: {nome}")
+        print(f"Conforto = {calcados[nome]['conforto']}, Preço = R$ {calcados[nome]['preco']}")
+
+# Valor final da função objetivo
+z = sum(
+    w_c * (calcados[n]["conforto"] / C_max) * x[n].varValue -
+    w_p * (calcados[n]["preco"] / P_max) * x[n].varValue
+    for n in calcados
+)
+print(f"\nValor da função escalarizada Z = {z:.2f}")
