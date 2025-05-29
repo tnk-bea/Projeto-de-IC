@@ -1,1 +1,62 @@
+from pulp import *
+
+# Dados
+calcados = {
+    "Tênis 1":     {"preco": 500, "conforto": 10},
+    "Sandália 1":  {"preco": 80,  "conforto": 5},
+    "Sandália 2":  {"preco": 450, "conforto": 7},
+    "Tênis 2":     {"preco": 200, "conforto": 8},
+    "Bota 1":      {"preco": 150, "conforto": 5},
+    "Sapatênis 1": {"preco": 150, "conforto": 3},
+    "Tênis 3":     {"preco": 200, "conforto": 4}
+}
+
+Zp_star = 80      # menor preço ideal
+Zc_star = -10     # maior conforto (max → min do oposto)
+
+w1 = 0.5
+w2 = 0.5
+
+# Modelo
+modelo = LpProblem("Tchebycheff", LpMinimize)
+
+x = {k: LpVariable(f"x_{k}", cat=LpBinary) for k in calcados}
+t = LpVariable("t", lowBound=0)
+
+# Soma total de preço e conforto (invertido)
+P = lpSum(calcados[i]["preco"] * x[i] for i in calcados)
+C = -lpSum(calcados[i]["conforto"] * x[i] for i in calcados)  # max conforto vira min (-conforto)
+
+# Variáveis auxiliares para |P - Zp_star| e |C - Zc_star|
+diff_p = LpVariable("diff_p", lowBound=0)
+diff_c = LpVariable("diff_c", lowBound=0)
+
+modelo += t, "Funcao_Tchebycheff"
+
+# Restrições de valor absoluto (modelado com duas desigualdades)
+modelo += P - Zp_star <= diff_p
+modelo += Zp_star - P <= diff_p
+
+modelo += C - Zc_star <= diff_c
+modelo += Zc_star - C <= diff_c
+
+# Restrições Tchebycheff com pesos
+modelo += w1 * diff_p <= t
+modelo += w2 * diff_c <= t
+
+# Pelo menos um calçado
+modelo += lpSum(x[i] for i in calcados) >= 1
+
+# Resolver
+modelo.solve()
+
+# Resultado
+print("Calçados escolhidos (Tchebycheff):")
+for i in calcados:
+    if x[i].varValue > 0:
+        print(f"{i} → {x[i].varValue}")
+
+print(f"Preço total = R$ {value(P):.2f}")
+print(f"Conforto total = {-value(C):.2f}")
+print(f"Valor da métrica de Tchebycheff: {value(t):.2f}")
 
