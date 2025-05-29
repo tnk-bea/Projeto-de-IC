@@ -1,1 +1,86 @@
+from pulp import *
 
+
+# Parâmetros e conjuntos fictícios de exemplo
+n = 3  # número de clientes internos
+m = 2  # número de clientes externos
+K = 2  # número de veículos
+Q = 100  # capacidade máxima do veículo
+
+clientes_internos = [f"v{i}" for i in range(1, n+1)]
+clientes_externos = [f"v{i}" for i in range(n+1, n+m+1)]
+nos = ["v0"] + clientes_internos + clientes_externos + [f"v{n+m+1}"]
+arestas = [(i, j) for i in nos for j in nos if i != j]
+veiculos = list(range(1, K+1))
+
+# Parâmetros de exemplo
+p = {i: 100 for i in clientes_internos + clientes_externos}
+alpha = 0.3
+c = 2
+d = {(i, j): 10 for (i, j) in arestas}
+q = {i: 20 for i in clientes_internos + clientes_externos}
+rho0 = 1.0
+rhostar = 2.0
+delta = 2.6
+
+
+# Modelo
+model = LpProblem("GreenRouteMO", LpMaximize)
+
+# Variáveis de decisão
+x = LpVariable.dicts("x", ((i, j, k) for (i, j) in arestas for k in veiculos), cat=LpBinary)
+y = LpVariable.dicts("y", (i for i in clientes_internos + clientes_externos), cat=LpBinary)
+l = LpVariable.dicts("l", ((i, j, k) for (i, j) in arestas for k in veiculos), lowBound=0)
+
+
+# Funções Objetivo
+# (1) Maximização do lucro
+f1 = lpSum(
+    p[i] * (1 - y[i]) for i in clientes_internos
+) + lpSum(
+    alpha * p[i] * (1 - y[i]) for i in clientes_externos
+) - lpSum(
+    c * d[i, j] * x[i, j, k] for (i, j) in arestas for k in veiculos
+)
+
+# (2) Minimização das emissões
+f2 = lpSum(
+    (rho0 * x[i, j, k] + ((rhostar - rho0) / Q) * q[i] * x[i, j, k]) * d[i, j] * delta
+    for (i, j) in arestas for k in veiculos if i in q
+)
+
+
+# Restrições
+# (3) Conservação de fluxo
+for i in nos:
+    for k in veiculos:
+        model += lpSum(x[h, i, k] for h in nos if h != i) == lpSum(x[i, j, k] for j in nos if j != i)
+
+# (4) Atendimento exclusivo por cliente
+for i in clientes_internos + clientes_externos:
+    model += lpSum(x[i, j, k] for j in nos for k in veiculos if j != i) == 1 - y[i]
+
+# (5) Capacidade total por veículo
+for k in veiculos:
+    model += lpSum(q[i] * x[i, j, k] for i in clientes_internos + clientes_externos for j in nos if i != j) <= Q
+
+# (6) Carga transportada por trecho
+for (i, j) in arestas:
+    for k in veiculos:
+        if i in clientes_internos + clientes_externos:
+            model += l[i, j, k] == q[i] * x[i, j, k]
+
+
+# Função objetivo (temporária: apenas f1, para testes)
+
+
+model.setObjective(f1)
+
+
+# Execução (opcional para teste)
+
+
+# model.solve()
+# print("Status:", LpStatus[model.status])
+# print("Lucro total:", value(f1))
+# print("Emissão total:", value(f2))
