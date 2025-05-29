@@ -1,0 +1,61 @@
+# Instalação da biblioteca PuLP (caso ainda não tenha sido feita)
+!pip install pulp
+
+from pulp import LpProblem, LpMaximize, LpVariable, LpBinary, lpSum, PULP_CBC_CMD
+
+# Dados dos sapatos
+sapatos = ['A', 'B', 'C', 'D', 'E']
+
+conforto = {
+    'A': 3,
+    'B': 5,
+    'C': 7,
+    'D': 5,
+    'E': 10
+}
+
+preco = {
+    'A': 100,
+    'B': 150,
+    'C': 150,
+    'D': 200,
+    'E': 300
+}
+
+qualidade = {
+    'A': 7,
+    'B': 10,
+    'C': 5,
+    'D': 3,
+    'E': 10
+}
+
+# Criação do modelo de otimização
+modelo = LpProblem("Escolha_dos_Sapatos", LpMaximize)
+
+# Variáveis de decisão: binárias, indicam se o sapato i será comprado ou não
+x = {i: LpVariable(f"x_{i}", cat=LpBinary) for i in sapatos}
+
+# Função objetivo: maximizar o conforto total
+modelo += lpSum(conforto[i] * x[i] for i in sapatos)
+
+# Restrição de orçamento
+modelo += lpSum(preco[i] * x[i] for i in sapatos) <= 400, "Restricao_Orcamento"
+
+# Restrições de qualidade mínima (qualidade >= 8)
+for i in sapatos:
+    if qualidade[i] < 8:
+        modelo += x[i] == 0, f"Restricao_Qualidade_{i}"
+
+# Resolver o modelo
+modelo.solve(PULP_CBC_CMD(msg=False))
+
+# Impressão dos resultados
+print("Solução ótima encontrada:\n")
+for i in sapatos:
+    if x[i].varValue == 1:
+        print(f"Sapato selecionado: {i}")
+conforto_total = sum(conforto[i] * x[i].varValue for i in sapatos)
+custo_total = sum(preco[i] * x[i].varValue for i in sapatos)
+print(f"\nConforto total: {conforto_total}")
+print(f"Custo total: R$ {custo_total:.2f}")
