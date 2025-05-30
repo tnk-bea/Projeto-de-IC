@@ -1,1 +1,53 @@
+import pandas as pd
+
+# Dados da Rota B (Caminhão Rosa + Caminhão Verde)
+dados_b = {
+    "Caminhão": ["Rosa", "Verde"],
+    "Custo (R$)": [286.30, 335.32],
+    "Poluição (g)": [3910, 2898],
+    "Energia (W)": [104.16, 133.98]
+}
+
+# Dados da Rota C (Caminhão Rosa + Caminhão Verde)
+dados_c = {
+    "Caminhão": ["Rosa", "Verde"],
+    "Custo (R$)": [408.57, 238.28],
+    "Poluição (g)": [2890, 4179],
+    "Energia (W)": [161.28, 90.30]
+}
+
+# Criação dos dataframes
+df_b = pd.DataFrame(dados_b)
+df_c = pd.DataFrame(dados_c)
+
+# Cálculo dos totais por função objetivo
+totais_b = df_b[["Custo (R$)", "Poluição (g)", "Energia (W)"]].sum()
+totais_c = df_c[["Custo (R$)", "Poluição (g)", "Energia (W)"]].sum()
+
+# Exibição dos resultados
+print("Tabela - Rota B")
+print(df_b)
+print("\nTotais Rota B:")
+print(totais_b)
+
+print("\nTabela - Rota C")
+print(df_c)
+print("\nTotais Rota C:")
+print(totais_c)
+
+# Função para comparar os resultados e identificar o melhor por critério
+def comparar_resultado():
+    melhor_por_criterio = {}
+    for criterio in ["Custo (R$)", "Poluição (g)", "Energia (W)"]:
+        if totais_b[criterio] < totais_c[criterio]:
+            melhor_por_criterio[criterio] = "Rota B"
+        else:
+            melhor_por_criterio[criterio] = "Rota C"
+    return melhor_por_criterio
+
+# Resultado da comparação
+melhor_resposta = comparar_resultado()
+print("\nMelhor rota por critério:")
+for criterio, rota in melhor_resposta.items():
+    print(f"{criterio}: {rota}")
 
